@@ -3,8 +3,6 @@ import torch.nn as nn
 from utils.BulkFormer_block import BulkFormer_block
 from utils.Rope import PositionalExprEmbedding
 
-
-
 class BulkFormer(nn.Module):
     def __init__(self, 
                  dim, graph, gene_emb, gene_length,

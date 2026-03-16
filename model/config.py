@@ -1,16 +1,24 @@
 
-# BulkFormer-147M
+# # BulkFormer-147M
+# model_params = {
+#     'dim': 640,
+#     "bins": 0,
+#     "gb_repeat": 1,
+#     "p_repeat": 12,
+#     'bin_head': 12,
+#     'full_head': 8,
+#     'gene_length': 20010
+# }
+# BulkFormer-37M Arabidopsis
 model_params = {
-    'dim': 640,
-    "bins": 0,
-    "gb_repeat": 1,
-    "p_repeat": 12,
+    'dim': 128,
+    'bins': 0,
+    'gb_repeat': 1,
+    'p_repeat': 1,
     'bin_head': 12,
     'full_head': 8,
-    'gene_length': 20010
+    'gene_length': 27655  # replace with actual len(gene_list) from Step 1
 }
-
-
 
 # # BulkFormer-37M
 # model_params = {
