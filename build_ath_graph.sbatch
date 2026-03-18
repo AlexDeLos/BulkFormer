@@ -16,7 +16,7 @@ module use /opt/insy/modulefiles
 module load miniconda/3.9
 
 eval "$(conda shell.bash hook)"
-conda activate bulk_transformer_env
+conda activate bulkformer_env
 
 echo "=================================================="
 echo "Job ID: $SLURM_JOB_ID"
