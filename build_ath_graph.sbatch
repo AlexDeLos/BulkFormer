@@ -8,7 +8,7 @@
 #SBATCH --mem=32G
 #SBATCH --mail-type=END
 #SBATCH --job-name=build_ath_graph
-#SBATCH --output=/home/nfs/alexdelossanto/Dataset_fusion_Microarray/logs_slurm/stdout-%x-%j.txt
+#SBATCH --output=/home/nfs/alexdelossanto/BulkFormer/logs_slurm/stdout-%x-%j.txt
 #SBATCH --export=NONE
 
 module purge
