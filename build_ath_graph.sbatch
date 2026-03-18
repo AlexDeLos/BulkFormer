@@ -31,7 +31,7 @@ echo "=================================================="
 
 # cd $PROJECT
 
-python3 -u utils/build_ath_graph.py
+python3 -u utils/build_graph_ara.py
 
 echo "=================================================="
 echo "Job finished"
