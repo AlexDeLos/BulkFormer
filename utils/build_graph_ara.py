@@ -37,6 +37,6 @@ for i in range(G):
 edge_index  = torch.tensor([rows, cols], dtype=torch.long)
 edge_weight = torch.tensor(vals, dtype=torch.float32)
 
-torch.save(edge_index,  '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/graph_data/G_ath.pt')
-torch.save(edge_weight, '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/graph_data/G_ath_weight.pt')
+torch.save(edge_index,  '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath.pt')
+torch.save(edge_weight, '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath_weight.pt')
 print(f'Graph: {len(vals)} edges across {G} genes')

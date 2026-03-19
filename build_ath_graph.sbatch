@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #SBATCH --partition=general
-#SBATCH --qos=short
-#SBATCH --time=02:00:00
+#SBATCH --qos=medium
+#SBATCH --time=242:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
+#SBATCH --mem=70G
 #SBATCH --mail-type=END
 #SBATCH --job-name=build_ath_graph
 #SBATCH --output=/home/nfs/alexdelossanto/BulkFormer/logs_slurm/stdout-%x-%j.txt
