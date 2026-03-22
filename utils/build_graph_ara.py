@@ -2,41 +2,54 @@
 import pandas as pd
 import numpy as np
 import torch
+from tqdm import tqdm
 
-# EXPR_PATH  = '/home/alex/Documents/GitHub/Dataset_fusion_Microarray/new_storage/final_data/RMA_Microarray_Combined.csv'
 EXPR_PATH  = '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/imputed.csv'
 GENE_INFO  = 'metadata/arabidopsis_gene_info.csv'
+CHUNK_SIZE = 500
+TOP_K      = 20
+PCC_THRESH = 0.4
+OUT_DIR    = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data'
 
 gene_info = pd.read_csv(GENE_INFO)
 gene_list = gene_info['tair_id'].tolist()
 
 expr = pd.read_csv(EXPR_PATH, index_col=0).T
-# Keep only genes in vocabulary, transpose to samples x genes
 expr = expr[[c for c in gene_list if c in expr.columns]]
-print(f'Expression matrix: {expr.shape}')
+print(f'Expression matrix: {expr.shape}  (samples × genes)')
 
-# Pearson correlation — may need chunking for 27k genes
-print('Computing correlations...')
-corr = expr.corr(method='pearson')  # [G, G]
+# Pre-standardise once
+X = expr.values.astype(np.float32)
+X = X - X.mean(axis=0, keepdims=True)
+std = X.std(axis=0, keepdims=True)
+std[std == 0] = 1.0
+X = X / std
+n_samples, G = X.shape
+print(f'Computing chunked PCC for {G} genes...')
 
-# Apply thresholds: |PCC| > 0.4, top-20 edges per gene
-G = len(corr)
 rows, cols, vals = [], [], []
-corr_abs = corr.abs()
+for i_start in tqdm(range(0, G, CHUNK_SIZE)):
+    i_end  = min(i_start + CHUNK_SIZE, G)
+    chunk  = X[:, i_start:i_end]
+    pcc_block = (chunk.T @ X) / n_samples   # [chunk, G]
 
-for i in range(G):
-    col_vals = corr_abs.iloc[i].values.copy()
-    col_vals[i] = 0  # exclude self
-    top20_idx = np.argsort(col_vals)[-20:]
-    for j in top20_idx:
-        if col_vals[j] >= 0.4:
-            rows.append(i)
-            cols.append(j)
-            vals.append(corr.iloc[i, j])
+    for local_i, global_i in enumerate(range(i_start, i_end)):
+        row_pcc = pcc_block[local_i].copy()
+        row_abs = np.abs(row_pcc)
+        row_abs[global_i] = 0
+        top_idx = np.argsort(row_abs)[-TOP_K:]
+        for j in top_idx:
+            if row_abs[j] >= PCC_THRESH:
+                rows.append(global_i)
+                cols.append(int(j))
+                vals.append(float(row_pcc[j]))
 
 edge_index  = torch.tensor([rows, cols], dtype=torch.long)
-edge_weight = torch.tensor(vals, dtype=torch.float32)
+edge_weight = torch.tensor(vals,         dtype=torch.float32)
 
-torch.save(edge_index,  '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath.pt')
-torch.save(edge_weight, '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath_weight.pt')
-print(f'Graph: {len(vals)} edges across {G} genes')
+import os
+os.makedirs(OUT_DIR, exist_ok=True)
+torch.save(edge_index,  f'{OUT_DIR}/G_ath.pt')
+torch.save(edge_weight, f'{OUT_DIR}/G_ath_weight.pt')
+print(f'Done — {len(vals)} edges across {G} genes')
+print(f'Avg edges per gene: {len(vals)/G:.1f}')
