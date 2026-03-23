@@ -10,7 +10,7 @@ from torch_geometric.typing import SparseTensor
 from utils.BulkFormer import BulkFormer
 
 # ── Config ────────────────────────────────────────────────────────────────────
-EXPR_PATH   = '/home/alex/Documents/GitHub/Dataset_fusion_Microarray/new_storage/final_data/RMA_Microarray_Combined.csv'
+EXPR_PATH   = '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/imputed.csv'
 GENE_INFO   = 'metadata/arabidopsis_gene_info.csv'
 GRAPH_PATH  = 'data/G_ath.pt'
 WEIGHT_PATH = 'data/G_ath_weight.pt'
