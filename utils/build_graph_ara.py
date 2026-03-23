@@ -8,7 +8,7 @@ EXPR_PATH  = '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/imput
 GENE_INFO  = 'metadata/arabidopsis_gene_info.csv'
 CHUNK_SIZE = 500
 TOP_K      = 20
-PCC_THRESH = 0.4
+PCC_THRESH = 0.2
 OUT_DIR    = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data'
 
 gene_info = pd.read_csv(GENE_INFO)
