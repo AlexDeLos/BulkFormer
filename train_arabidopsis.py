@@ -12,8 +12,8 @@ from utils.BulkFormer import BulkFormer
 # ── Config ────────────────────────────────────────────────────────────────────
 EXPR_PATH   = '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/imputed.csv'
 GENE_INFO   = 'metadata/arabidopsis_gene_info.csv'
-GRAPH_PATH  = 'data/G_ath.pt'
-WEIGHT_PATH = 'data/G_ath_weight.pt'
+GRAPH_PATH  = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath.pt'
+WEIGHT_PATH = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath_weight.pt'
 PRETRAINED  = 'model/BulkFormer_37M.pt'   # human checkpoint — warm-start
 SAVE_DIR    = 'model/checkpoints_ath'
 os.makedirs(SAVE_DIR, exist_ok=True)
