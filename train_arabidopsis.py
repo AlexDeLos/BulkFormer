@@ -4,7 +4,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
-from collections import OrderedDict
 from tqdm import tqdm
 from torch_geometric.typing import SparseTensor
 from utils.BulkFormer import BulkFormer
@@ -14,7 +13,6 @@ EXPR_PATH   = '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/impu
 GENE_INFO   = 'metadata/arabidopsis_gene_info.csv'
 GRAPH_PATH  = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath.pt'
 WEIGHT_PATH = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath_weight.pt'
-PRETRAINED  = 'model/BulkFormer_37M.pt'   # human checkpoint — warm-start
 SAVE_DIR    = 'model/checkpoints_ath'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
@@ -30,25 +28,23 @@ DEVICE      = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Device: {DEVICE}')
 
 # ── Gene vocab ────────────────────────────────────────────────────────────────
-gene_info   = pd.read_csv(GENE_INFO)
-gene_list   = gene_info['tair_id'].drop_duplicates().tolist()
-GENE_LENGTH = len(gene_list)
-print(f'Vocabulary: {GENE_LENGTH} Arabidopsis genes')
+gene_info = pd.read_csv(GENE_INFO)
+all_genes = gene_info['tair_id'].drop_duplicates().tolist()
 
 # ── Expression data ───────────────────────────────────────────────────────────
 print('Loading expression data...')
 expr_df = pd.read_csv(EXPR_PATH, index_col=0).T   # → samples × genes
-expr_df = expr_df[[c for c in gene_list if c in expr_df.columns]]
-print(f'Expression matrix: {expr_df.shape}  (samples × genes)')
 
-# Align to full vocab — pad missing genes with 0
-missing = list(set(gene_list) - set(expr_df.columns))
-if missing:
-    pad = pd.DataFrame(0.0, index=expr_df.index, columns=missing)
-    expr_df = pd.concat([expr_df, pad], axis=1)[gene_list]
+# Sync vocabulary to genes present in BOTH gene_info AND expression data
+# This must match the graph node count (graph was built from expression data)
+gene_list   = [g for g in all_genes if g in expr_df.columns]
+GENE_LENGTH = len(gene_list)
+expr_df     = expr_df[gene_list]
+print(f'Expression matrix: {expr_df.shape}  (samples × genes)')
+print(f'Vocabulary synced: {GENE_LENGTH} genes (matches graph node count)')
 
 expr_np = expr_df.values.astype(np.float32)
-print(f'Aligned matrix: {expr_np.shape}')
+print(f'Final matrix: {expr_np.shape}')
 
 # ── Graph ─────────────────────────────────────────────────────────────────────
 ei    = torch.load(GRAPH_PATH,  weights_only=False)
@@ -84,8 +80,8 @@ train_ds, val_ds = random_split(
     ExprDataset(expr_np, MASK_RATIO), [n_train, n_val],
     generator=torch.Generator().manual_seed(42)
 )
-train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,  num_workers=4, pin_memory=True)
-val_dl   = DataLoader(val_ds,   batch_size=BATCH_SIZE, shuffle=False, num_workers=4, pin_memory=True)
+train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,  num_workers=2, pin_memory=True)
+val_dl   = DataLoader(val_ds,   batch_size=BATCH_SIZE, shuffle=False, num_workers=2, pin_memory=True)
 print(f'Train: {n_train}  Val: {n_val}')
 
 # ── Model ─────────────────────────────────────────────────────────────────────
@@ -95,20 +91,7 @@ model = BulkFormer(
     bin_head=12, full_head=FULL_HEAD,
     bins=0, gb_repeat=GB_REPEAT, p_repeat=P_REPEAT
 ).to(DEVICE)
-print(f'Model: {sum(p.numel() for p in model.parameters())/1e6:.1f}M params')
-
-# ── Warm-start from human checkpoint (transfer compatible layers) ─────────────
-if os.path.exists(PRETRAINED):
-    ckpt     = torch.load(PRETRAINED, weights_only=False, map_location='cpu')
-    sd       = OrderedDict((k[7:] if k.startswith('module.') else k, v) for k, v in ckpt.items())
-    model_sd = model.state_dict()
-    transfer = {k: v for k, v in sd.items()
-                if k in model_sd and model_sd[k].shape == v.shape}
-    model.load_state_dict(transfer, strict=False)
-    print(f'Warm-started: {len(transfer)}/{len(model_sd)} layers from {PRETRAINED}')
-    print(f'Random init : {len(model_sd)-len(transfer)} layers (vocab-dependent)')
-else:
-    print('No pretrained checkpoint found — training from random init')
+print(f'Model: {sum(p.numel() for p in model.parameters())/1e6:.1f}M params — training from scratch')
 
 # ── Training loop ─────────────────────────────────────────────────────────────
 optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
