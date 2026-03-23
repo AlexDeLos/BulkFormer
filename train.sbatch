@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=gpu
+#SBATCH --partition=general
 #SBATCH --qos=short
 #SBATCH --time=04:00:00
 #SBATCH --ntasks=1
