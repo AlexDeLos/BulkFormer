@@ -7,11 +7,12 @@ class BulkFormer(nn.Module):
     def __init__(self, 
                  dim, graph, gene_emb, gene_length,
                  bin_head=4, full_head=4, bins=10,
-                 gb_repeat=3, p_repeat=1):
+                 gb_repeat=3, p_repeat=1, use_graph =True):
         super().__init__()
         self.dim = dim
         self.gene_length = gene_length
         self.graph = graph
+        self.use_graph = use_graph
 
         # # === 基因 embedding ===
         # self.gene_emb = nn.Parameter(gene_emb)
@@ -58,7 +59,7 @@ class BulkFormer(nn.Module):
             nn.ReLU()
         )
 
-    def forward(self, x, mask_prob=None, output_expr = False):
+    def forward(self, x, mask_prob=None, output_expr = False,use_graph=True):
         b, g = x.shape
         x_input = x.clone()
 
@@ -72,7 +73,7 @@ class BulkFormer(nn.Module):
 
         # === 主干 ===
         for layer in self.gb_formers:
-            x = layer(x, self.graph)
+            x = layer(x, self.graph,use_graph)
        
         # === gene token 输出 ===
         gene_emb = self.layernorm(x)

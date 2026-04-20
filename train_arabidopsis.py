@@ -1,22 +1,47 @@
-import os, json
+import os
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
-from tqdm import tqdm
 from torch_geometric.typing import SparseTensor
 from utils.BulkFormer import BulkFormer
 
+# big
+# # BulkFormer-127M
+# model_params = {
+#     'dim': 640,
+#     "bins": 0,
+#     "gb_repeat": 1,
+#     "p_repeat": 8,
+#     'bin_head': 12,
+#     'full_head': 8,
+#     'gene_length': 20010
+# }
+
+# BulkFormer-37M  Arabidopsis
+# model_params = {
+#     'dim':         128,
+#     'bins':        0,
+#     'gb_repeat':   1,
+#     'p_repeat':    1,
+#     'bin_head':    12,
+#     'full_head':   8,
+#     'gene_length': 21040   # from your graph build output
+# }
+
 # ── Config ────────────────────────────────────────────────────────────────────
 EXPR_PATH   = '/tudelft.net/staff-umbrella/GeneExpressionStorage/final_data/imputed.csv'
-GENE_INFO   = 'metadata/arabidopsis_gene_info.csv'
+# EXPR_PATH = '/home/alex/Documents/GitHub/Dataset_fusion_Microarray/new_storage/final_data/imputed.csv'
+# GENE_INFO   = 'metadata/arabidopsis_gene_info.csv'
 GRAPH_PATH  = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath.pt'
 WEIGHT_PATH = '/tudelft.net/staff-umbrella/GeneExpressionStorage/graph_data/G_ath_weight.pt'
+GRAPH_PATH  = './data/graph_data/G_ath.pt'
+WEIGHT_PATH = './data/graph_data/G_ath_weight.pt'
 SAVE_DIR    = 'model/checkpoints_ath'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-DIM         = 128
+DIM         = 640
 GB_REPEAT   = 1
 P_REPEAT    = 1
 FULL_HEAD   = 8

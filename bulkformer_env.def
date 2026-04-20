@@ -1,0 +1,77 @@
+Bootstrap: docker
+From: pytorch/pytorch:2.2.1-cuda11.8-cudnn8-devel
+
+%labels
+    Author      alexdelossanto
+    Project     BulkFormer_Visualization
+    Python      3.10
+    CUDA        11.8
+
+%environment
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    export NUMBA_CACHE_DIR=/tmp
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    # 1. System essentials
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        wget \
+        curl \
+        git \
+        ca-certificates \
+        && rm -rf /var/lib/apt/lists/*
+
+    # 2. Upgrade pip
+    pip install --no-cache-dir --upgrade pip setuptools wheel
+
+    # 3. Install torch-geometric and sparse backends
+    # These MUST come from the PyG wheel URL to get CUDA-compiled .so files.
+    # torch-scatter and torch-sparse built against torch 2.2.1+cu118.
+    pip install --no-cache-dir torch_geometric==2.5.3
+    pip install --no-cache-dir pyg_lib torch_scatter torch_sparse \
+        -f https://data.pyg.org/whl/torch-2.2.1+cu118.html
+
+    # 4. Data science and model dependencies
+    # IMPORTANT: torch-sparse is intentionally omitted here.
+    # It was installed with CUDA extensions in step 3.
+    # Re-installing from PyPI would overwrite that with a CPU-only build,
+    # causing "Could not load _version_cuda.so" at runtime.
+    pip install --no-cache-dir \
+        "torch==2.2.1" \
+        "numpy<2.0.0" \
+        pandas \
+        matplotlib \
+        scipy \
+        scikit-learn \
+        umap-learn \
+        tqdm \
+        einops \
+        "axial-positional-embedding>=0.1.0" \
+        "local-attention>=1.1.1"
+
+    # 5. Install performer-pytorch without build isolation 
+    # This allows it to "see" the globally installed PyTorch during compilation
+    pip install --no-cache-dir --no-build-isolation performer-pytorch
+
+%runscript
+    exec python "$@"
+
+%test
+    python -c "
+import torch
+import torch_geometric
+from torch_sparse import SparseTensor
+import pandas, umap, matplotlib
+from performer_pytorch import Performer
+print('PyTorch:', torch.__version__)
+print('CUDA available:', torch.cuda.is_available())
+# Verify SparseTensor actually works (requires CUDA .so)
+ei = torch.zeros(2, 4, dtype=torch.long)
+ew = torch.ones(4)
+st = SparseTensor(row=ei[0], col=ei[1], value=ew, sparse_sizes=(3, 3))
+print('SparseTensor: OK')
+print('All checks passed.')
+"

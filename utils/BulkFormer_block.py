@@ -26,11 +26,13 @@ class BulkFormer_block(nn.Module):
 
         self.layernorm = nn.LayerNorm(self.dim)
 
-    def forward(self, x, graph):
+    def forward(self, x, graph,use_graph):
  
         # === 图卷积 ===
         x = self.layernorm(x)
-        x = x + self.g(x, graph)
+        if use_graph:
+            x = x + self.g(x, graph)# This can change it from .94 PCC to .75 so it does help quite a bit
+        # print("SKIPING GRAPH")
         # === performer ===
         x = self.f(x)
 
